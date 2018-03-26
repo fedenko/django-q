@@ -16,6 +16,7 @@ from multiprocessing import Event, Process, Value, current_process
 import arrow
 
 # Django
+from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django import db
@@ -512,7 +513,11 @@ def scheduler(broker=None):
                 q_options['hook'] = s.hook
             # set up the next run time
             if not s.schedule_type == s.ONCE:
-                next_run = arrow.get(s.next_run)
+                next_run = arrow.get(
+                    timezone.make_aware(s.next_run)
+                    if not settings.USE_TZ
+                    else s.next_run
+                )
                 while True:
                     if s.schedule_type == s.MINUTES:
                         next_run = next_run.replace(minutes=+(s.minutes or 1))
@@ -530,7 +535,11 @@ def scheduler(broker=None):
                         next_run = next_run.replace(years=+1)
                     if Conf.CATCH_UP or next_run > arrow.utcnow():
                         break
-                s.next_run = next_run.datetime
+                s.next_run = (
+                    timezone.make_naive(next_run.datetime)
+                    if not settings.USE_TZ
+                    else next_run.datetime
+                )
                 s.repeats += -1
             # send it to the cluster
             q_options['broker'] = broker
