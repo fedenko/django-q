@@ -63,7 +63,7 @@ def test_scheduler(broker, monkeypatch):
     assert schedule.success() is True
     assert (
         timezone.make_aware(schedule.next_run)
-        if timezone.is_native(schedule.next_run)
+        if timezone.is_naive(schedule.next_run)
         else schedule.next_run
     ) < arrow.get(timezone.now()).replace(hours=+1)
     task = fetch(schedule.task)
