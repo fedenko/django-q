@@ -49,6 +49,11 @@ class Cluster(object):
         # Start Sentinel
         self.stop_event = Event()
         self.start_event = Event()
+        try:
+            self.broker.ping()
+        except Exception as e:
+            logger.error(e)
+            return False
         self.sentinel = Process(target=Sentinel,
                                 args=(self.stop_event, self.start_event, self.broker, self.timeout))
         self.sentinel.start()
